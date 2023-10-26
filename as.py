@@ -1,39 +1,52 @@
 import socket
-import random
+import pickle
 
-# Define the host and port
+from component_util import create_user, decryptAES, get_user_password, parse_message
+
 HOST = '127.0.0.1'
-PORT = 8080
+PORT = 8081
 
 # Create a socket using IPv4 and TCP
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Bind the socket to the host and port
 server_socket.bind((HOST, PORT))
 
-# Listen for incoming connections
 server_socket.listen()
 
 print(f'Server listening on {HOST}:{PORT}')
 
-# Accept incoming connections and handle them
+create_user()
+
 while True:
     conn, addr = server_socket.accept()
     print(f'Connected to {addr}')
 
-    # Handle the connection
     with conn:
         while True:
-            data = conn.recv(1024)
-            if not data:
-                break  # Connection closed by the client
+            M_1_data = conn.recv(1024)
+            if not M_1_data:
+                break
 
-            receivedMessage = data.decode()
-            print('Received login:', receivedMessage)
-            # You can perform further actions based on the login and password
+            print("A primeira mensagem foi recebida do Cliente!\n")
 
-            # Respond to the client
-            response = "Received login and password"
-            conn.sendall(response.encode())
+            print("M1", M_1_data)
+            M_1 = pickle.loads(M_1_data)
+            ID_C = M_1[0]
+            K_C = get_user_password(ID_C)[:32]
+            K_C = K_C.encode()
+
+            print("M1[1]", M_1[1])
+
+            decrypted_M_1 = decryptAES(M_1[1], K_C)
+            decrypted_M_1 = parse_message(decrypted_M_1)
+            ID_S = decrypted_M_1[0]
+            T_R = decrypted_M_1[1]
+            N_1 = decrypted_M_1[2]
+
+            print("ID_S ", ID_S)
+            print("TR ", ID_S)
+            print("N_1 ", ID_S)
+
+            print(decrypted_M_1)
 
     print(f'Connection with {addr} closed')

@@ -1,16 +1,18 @@
 import socket
-import hashlib
 import random
-from cryptography.fernet import Fernet
+import time
+import pickle
+
+from component_util import encryptAES, get_user_password, validate_user
  
 HOST = '127.0.0.1'
 PORT = 8080
+PORT_AS = 8081
 
-ID_C = "client_id"
 ID_S = "server_id"
-T_R = "60"
-K_C = Fernet.generate_key()
-N_1 = str(random.randint(1, 50))
+T_R = 60
+
+# M1 = [ID_C + {ID_S + T_R + N1}Kc]
 
 # Create a socket using IPv4 and TCP
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,76 +23,45 @@ server_socket.listen()
 print(f'Server listening on {HOST}:8085')
 
 def menu():
-    choice = input("1. Cadastrar usuário\n2. Autenticar servico\n")
+    choice = input("1. Autenticar serviço\n")
 
     if choice == '1':
         user_login = input("Login: ") 
         user_password = input("Senha: ")
-        user_data = user_login + ":" + hashlib.sha512(user_password.encode()).hexdigest() 
+        
+        if validate_user(user_login, user_password):
+            client_server(user_login)
 
-        with open("client_data.txt", "a") as file:
-            file.write(user_data + "\n")
-        return
-
-    if choice == '2':
-        client_server()
-        return
-    
     print("Escolha uma opção válida!")
 
-def validateUser(user_login: str, user_password: str):
-    hashed_password = hashlib.sha512(user_password.encode()).hexdigest() 
-    user_data = user_login + ":" + hashed_password
+def build_first_message(ID_C: bytes, N_1: bytes, K_C: bytes): 
+    buffer_M1 = f"{ID_S},{T_R},{N_1}"
+    return [ID_C, encryptAES(buffer_M1, K_C)]
 
-    with open("client_data.txt", "r") as file:
-        for line in file:
-            if user_data in line:
-                print("\nUsuário Autenticado, enviando Mensagem 1...\n")
-                return
-        
-        print("\nUsuário inexistente!\n\n")
-        menu()
+def send_first_message(sock: socket, M_1: bytes):
+    time.sleep(5)
+    sock.connect((HOST, PORT_AS))
+    serialized_M_1 = pickle.dumps(M_1)
 
-def build_first_message(): 
-    fernet = Fernet(K_C)
-    return [ID_C, [fernet.encrypt(ID_S), fernet.encrypt(T_R), fernet.encrypt(N_1)]]
+    print("\n\nPrimeira mensagem enviada ao AS!!!\n\n")
+    sock.sendall(serialized_M_1)
 
-def client_server():
-    try:
-        client_socket.connect((HOST, PORT))
+def client_server(user_login: str):
+    
+    ID_C = user_login
+    N_1 = '%08x' % random.getrandbits(32)
+    K_C = get_user_password(user_login)
 
-        user_login = input("Login: ") 
-        user_password = input("Senha: ")
+    K_C = K_C.encode()
 
-        validateUser(user_login, user_password)
+    M_1 = build_first_message(ID_C, N_1, K_C)
 
-        first_message = build_first_message()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        send_first_message(sock, M_1)
 
-        print(first_message)
 
-        data = client_socket.recv(1024)
-        print('Received from server:', data.decode())
-    except ConnectionRefusedError:
-        print('Connection refused. Make sure the server is running.')
-    finally:
-        # Close the socket
-        client_socket.close()
-
-while True:
+def main():
     menu()
 
-    conn, addr = server_socket.accept()
-    print(f'Connected to {addr}')
-
-    # Handle the connection
-    with conn:
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break  # Connection closed by the client
-
-        
-            
-    print(f'Connection with {addr} closed')
-
-
+if __name__ == "__main__":
+    main()
