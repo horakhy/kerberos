@@ -2,16 +2,17 @@ import socket
 import random
 import time
 import pickle
-
+import sys
 from component_util import decryptAES, encryptAES, get_user_password, parse_message, validate_user
  
 HOST = '127.0.0.1'
 PORT = 8080
 PORT_AS = 8081
 PORT_TGS = 8082
+PORT_SERVICE = 8083
 
 ID_S = "server_id"
-T_R = 60
+T_R = "120"
 
 # M1 = [ID_C + {ID_S + T_R + N1}Kc]
 
@@ -106,15 +107,46 @@ def client_server(user_login: str):
     
     K_C_S = M_4_DECRYPTED[0]
     K_C_S = K_C_S.encode()
-    T_A = M_4_DECRYPTED[1]
 
+    T_A = M_4_DECRYPTED[1]
     S_R = "login"
 
     print(f"Data limite de acesso: {time.ctime(float(T_A))}")
 
     N_3 = '%08x' % random.getrandbits(32)
 
+    T_C_S = M_4[1]
+
     buffer = f"{ID_C},{T_A},{S_R},{N_3}"
+
+    M_5 = [encryptAES(buffer, K_C_S), T_C_S]
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        time.sleep(5)
+        sock.connect((HOST, PORT_SERVICE))
+        M_5_SERIALIZED = pickle.dumps(M_5)
+
+        while(True):
+            sock.sendall(M_5_SERIALIZED)
+            print("M_5 enviado ao Serviço")
+
+            M_6 = sock.recv(1024)
+            M_6 = pickle.loads(M_6)
+
+            M_6_DECRYPTED = decryptAES(M_6[0], K_C_S)
+            M_6_DECRYPTED = parse_message(M_6_DECRYPTED)
+
+            print("M_6 recebido do Serviço")
+
+            response = M_6_DECRYPTED[0]
+
+            if(response == "408"):
+                print("Ticket expirou!\n")
+                sys.exit()
+            else:
+                print(response)
+            time.sleep(10)
+
 
 
 

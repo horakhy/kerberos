@@ -18,9 +18,9 @@ server_socket.listen()
 print(f'Server listening on {HOST}:{PORT}')
 
 # Accept incoming connections and handle them
-def build_fourth_message(K_C_TGS: bytes, ID_C: str, N_2: str):
+def build_fourth_message(K_C_TGS: bytes, ID_C: str, N_2: str, T_R: str):
     K_C_S = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16)) 
-    T_A = time.time()
+    T_A = time.time() + int(T_R)
 
     K_S = get_server_key("service")
     K_S = K_S.encode()
@@ -64,7 +64,7 @@ while True:
             T_R = M_3_1[2]
             N_2 = M_3_1[3]
 
-            M_4 = build_fourth_message(K_C_TGS, ID_C, N_2)
+            M_4 = build_fourth_message(K_C_TGS, ID_C, N_2, T_R)
 
             send_fourth_message(conn, M_4)
 
