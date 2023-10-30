@@ -47,8 +47,8 @@ def encryptAES(message: str, key: bytes):
 
 def decryptAES(message: str, key: bytes):
     message = base64.b64decode(message)
-    message = message[16:]
     iv_val = message[:16]
+    message = message[16:]
 
     cipher = AES.new(key[:32], AES.MODE_CBC, iv_val)
     decoded_message = cipher.decrypt(message)
@@ -59,3 +59,12 @@ def parse_message(message: str):
     parsed_message = message.strip("'")
     parsed_message_list = parsed_message.split(",")
     return parsed_message_list
+
+def get_server_key(server):
+    with open(f'{server}_server_data.txt','r', newline='\n') as f:
+        for line in f:
+            components = line.strip().split(':')
+            if len(components) == 1:
+                key = components[0]
+                return key
+        return -1

@@ -3,11 +3,12 @@ import random
 import time
 import pickle
 
-from component_util import encryptAES, get_user_password, validate_user
+from component_util import decryptAES, encryptAES, get_user_password, parse_message, validate_user
  
 HOST = '127.0.0.1'
 PORT = 8080
 PORT_AS = 8081
+PORT_TGS = 8082
 
 ID_S = "server_id"
 T_R = 60
@@ -31,6 +32,7 @@ def menu():
         
         if validate_user(user_login, user_password):
             client_server(user_login)
+            return
 
     print("Escolha uma opção válida!")
 
@@ -43,8 +45,23 @@ def send_first_message(sock: socket, M_1: bytes):
     sock.connect((HOST, PORT_AS))
     serialized_M_1 = pickle.dumps(M_1)
 
-    print("\n\nPrimeira mensagem enviada ao AS!!!\n\n")
+    print("\nM1 enviada ao AS!!!\n")
     sock.sendall(serialized_M_1)
+
+def build_third_message(ID_C: str, M_2, K_C_TGS: bytes):
+
+    N_2 = '%08x' % random.getrandbits(32)
+    T_C_TGS = M_2[1]
+
+    buffer = f"{ID_C},{ID_S},{T_R},{N_2}"
+    return [encryptAES(buffer, K_C_TGS), T_C_TGS]
+
+def send_third_message(sock, M_3):
+    time.sleep(5)
+    sock.connect((HOST, PORT_TGS))
+    M_3_SERIALIZED = pickle.dumps(M_3)
+
+    sock.sendall(M_3_SERIALIZED)
 
 def client_server(user_login: str):
     
@@ -58,6 +75,47 @@ def client_server(user_login: str):
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         send_first_message(sock, M_1)
+
+        M_2 = sock.recv(1024)
+        M_2 = pickle.loads(M_2)
+
+        print("M_2 recebida do AS!\n")
+    
+    M_2_DECRYPTED = decryptAES(M_2[0], K_C)
+    M_2_DECRYPTED = parse_message(M_2_DECRYPTED)
+
+    K_C_TGS = M_2_DECRYPTED[0]
+    K_C_TGS = K_C_TGS.encode()
+
+    M_3 = build_third_message(ID_C, M_2, K_C_TGS)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        send_third_message(sock, M_3)
+
+        print("M_3 enviada ao servidor TGS!")
+
+        M_4 = sock.recv(1024)
+        M_4 = pickle.loads(M_4)
+    
+    M_4_DECRYPTED = decryptAES(M_4[0], K_C_TGS)
+    M_4_DECRYPTED = parse_message(M_4_DECRYPTED)
+
+    print("M_4 recebida do servidor TGS!\n")
+    
+    print(M_4_DECRYPTED)
+    
+    K_C_S = M_4_DECRYPTED[0]
+    K_C_S = K_C_S.encode()
+    T_A = M_4_DECRYPTED[1]
+
+    S_R = "login"
+
+    print(f"Data limite de acesso: {time.ctime(float(T_A))}")
+
+    N_3 = '%08x' % random.getrandbits(32)
+
+    buffer = f"{ID_C},{T_A},{S_R},{N_3}"
+
 
 
 def main():
