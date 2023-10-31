@@ -4,7 +4,7 @@ import random
 import string
 import time
 
-from component_util import decryptAES, encryptAES, get_server_key, parse_message
+from component_util import decrypt_AES, encrypt_AES, get_server_key, parse_message
 
 HOST = '127.0.0.1'
 PORT = 8082
@@ -27,12 +27,12 @@ def build_fourth_message(K_C_TGS: bytes, ID_C: str, N_2: str, T_R: str):
 
     buffer_1 = f"{K_C_S},{T_A},{N_2}"
     T_C_S = f"{ID_C},{T_A},{K_C_S}"
-    return [encryptAES(buffer_1, K_C_TGS), encryptAES(T_C_S, K_S)]
+    return [encrypt_AES(buffer_1, K_C_TGS), encrypt_AES(T_C_S, K_S)]
 
 def send_fourth_message(conn, M_4: str):
     M_4_SERIALIZED = pickle.dumps(M_4)
     time.sleep(5)
-    print("M_4 enviada ao cliente!")
+    print("M_4 enviada ao cliente!\n")
     conn.sendall(M_4_SERIALIZED)
 
 while True:
@@ -45,19 +45,19 @@ while True:
             if not M_3_DATA:
                 break  
             
-            print("M_3 foi recebida do Cliente!")
+            print("M_3 foi recebida do Cliente!\n")
             
             M_3 = pickle.loads(M_3_DATA)
             TGS_KEY = get_server_key("tgs")
             TGS_KEY = TGS_KEY.encode()
 
-            M_3_2 = decryptAES(M_3[1], TGS_KEY) 
+            M_3_2 = decrypt_AES(M_3[1], TGS_KEY) 
             M_3_2 = parse_message(M_3_2)
 
             K_C_TGS = M_3_2[2] 
             K_C_TGS = K_C_TGS.encode()
 
-            M_3_1 = decryptAES(M_3[0], K_C_TGS) 
+            M_3_1 = decrypt_AES(M_3[0], K_C_TGS) 
             M_3_1 = parse_message(M_3_1)
 
             ID_C = M_3_1[0]
@@ -67,5 +67,3 @@ while True:
             M_4 = build_fourth_message(K_C_TGS, ID_C, N_2, T_R)
 
             send_fourth_message(conn, M_4)
-
-    print(f'Connection with {addr} closed')

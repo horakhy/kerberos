@@ -35,7 +35,7 @@ def get_user_password(user_login: str):
                 return password
         return ""
    
-def encryptAES(message: str, key: bytes):
+def encrypt_AES(message: str, key: bytes):
     message = str(message)
     message = message.encode()
     padded_message = pad(message, AES.block_size)
@@ -45,7 +45,7 @@ def encryptAES(message: str, key: bytes):
     encoded_message = cipher.encrypt(padded_message)
     return base64.b64encode(iv_val + encoded_message).decode()
 
-def decryptAES(message: str, key: bytes):
+def decrypt_AES(message: str, key: bytes):
     message = base64.b64decode(message)
     iv_val = message[:16]
     message = message[16:]

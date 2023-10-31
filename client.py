@@ -3,7 +3,7 @@ import random
 import time
 import pickle
 import sys
-from component_util import decryptAES, encryptAES, get_user_password, parse_message, validate_user
+from component_util import decrypt_AES, encrypt_AES, get_user_password, parse_message, validate_user
  
 HOST = '127.0.0.1'
 PORT = 8080
@@ -12,7 +12,7 @@ PORT_TGS = 8082
 PORT_SERVICE = 8083
 
 ID_S = "server_id"
-T_R = "120"
+T_R = "60"
 
 # M1 = [ID_C + {ID_S + T_R + N1}Kc]
 
@@ -39,14 +39,14 @@ def menu():
 
 def build_first_message(ID_C: bytes, N_1: bytes, K_C: bytes): 
     buffer_M1 = f"{ID_S},{T_R},{N_1}"
-    return [ID_C, encryptAES(buffer_M1, K_C)]
+    return [ID_C, encrypt_AES(buffer_M1, K_C)]
 
 def send_first_message(sock: socket, M_1: bytes):
     time.sleep(5)
     sock.connect((HOST, PORT_AS))
     serialized_M_1 = pickle.dumps(M_1)
 
-    print("\nM1 enviada ao AS!!!\n")
+    print("\nM1 enviada ao AS!\n")
     sock.sendall(serialized_M_1)
 
 def build_third_message(ID_C: str, M_2, K_C_TGS: bytes):
@@ -55,7 +55,7 @@ def build_third_message(ID_C: str, M_2, K_C_TGS: bytes):
     T_C_TGS = M_2[1]
 
     buffer = f"{ID_C},{ID_S},{T_R},{N_2}"
-    return [encryptAES(buffer, K_C_TGS), T_C_TGS]
+    return [encrypt_AES(buffer, K_C_TGS), T_C_TGS]
 
 def send_third_message(sock, M_3):
     time.sleep(5)
@@ -82,7 +82,7 @@ def client_server(user_login: str):
 
         print("M_2 recebida do AS!\n")
     
-    M_2_DECRYPTED = decryptAES(M_2[0], K_C)
+    M_2_DECRYPTED = decrypt_AES(M_2[0], K_C)
     M_2_DECRYPTED = parse_message(M_2_DECRYPTED)
 
     K_C_TGS = M_2_DECRYPTED[0]
@@ -93,25 +93,23 @@ def client_server(user_login: str):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         send_third_message(sock, M_3)
 
-        print("M_3 enviada ao servidor TGS!")
+        print("M_3 enviada ao servidor TGS!\n")
 
         M_4 = sock.recv(1024)
         M_4 = pickle.loads(M_4)
     
-    M_4_DECRYPTED = decryptAES(M_4[0], K_C_TGS)
+    M_4_DECRYPTED = decrypt_AES(M_4[0], K_C_TGS)
     M_4_DECRYPTED = parse_message(M_4_DECRYPTED)
 
     print("M_4 recebida do servidor TGS!\n")
-    
-    print(M_4_DECRYPTED)
-    
+        
     K_C_S = M_4_DECRYPTED[0]
     K_C_S = K_C_S.encode()
 
     T_A = M_4_DECRYPTED[1]
     S_R = "login"
 
-    print(f"Data limite de acesso: {time.ctime(float(T_A))}")
+    print(f"Data limite de acesso: {time.ctime(float(T_A))}\n")
 
     N_3 = '%08x' % random.getrandbits(32)
 
@@ -119,7 +117,7 @@ def client_server(user_login: str):
 
     buffer = f"{ID_C},{T_A},{S_R},{N_3}"
 
-    M_5 = [encryptAES(buffer, K_C_S), T_C_S]
+    M_5 = [encrypt_AES(buffer, K_C_S), T_C_S]
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         time.sleep(5)
@@ -128,15 +126,15 @@ def client_server(user_login: str):
 
         while(True):
             sock.sendall(M_5_SERIALIZED)
-            print("M_5 enviado ao Serviço")
+            print("M_5 enviado ao Serviço\n")
 
             M_6 = sock.recv(1024)
             M_6 = pickle.loads(M_6)
 
-            M_6_DECRYPTED = decryptAES(M_6[0], K_C_S)
+            M_6_DECRYPTED = decrypt_AES(M_6[0], K_C_S)
             M_6_DECRYPTED = parse_message(M_6_DECRYPTED)
 
-            print("M_6 recebido do Serviço")
+            print("M_6 recebido do Serviço\n")
 
             response = M_6_DECRYPTED[0]
 
@@ -145,6 +143,7 @@ def client_server(user_login: str):
                 sys.exit()
             else:
                 print(response)
+                print()
             time.sleep(10)
 
 
