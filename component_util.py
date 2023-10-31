@@ -4,6 +4,8 @@ from Crypto.Util.Padding import pad, unpad
 import base64
 from Crypto.Random import get_random_bytes
 import sys
+import random
+import string
 
 def create_user():
     user_login = input("Login: ") 
@@ -74,3 +76,10 @@ def validate_random_number(random_num: bytes, validate_num: bytes):
     if (random_num != validate_num):
         print("Número aleatório incorreto!")
         sys.exit()
+
+def update_key(server: str):
+    letters_and_digits = string.ascii_letters + string.digits
+    new_key = ''.join(random.choice(letters_and_digits) for i in range(32))
+
+    with open(f'{server}_data.txt', 'w') as f:
+        f.write(f'{new_key}')

@@ -12,7 +12,7 @@ PORT_TGS = 8082
 PORT_SERVICE = 8083
 
 ID_S = "server_id"
-T_R = "60"
+T_R = "40"
 
 # M1 = [ID_C + {ID_S + T_R + N1}Kc]
 

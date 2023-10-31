@@ -4,7 +4,7 @@ import random
 import string
 import time
 
-from component_util import decrypt_AES, encrypt_AES, get_server_key, parse_message
+from component_util import decrypt_AES, encrypt_AES, get_server_key, parse_message, update_key
 
 HOST = '127.0.0.1'
 PORT = 8082
@@ -21,6 +21,8 @@ print(f'Server listening on {HOST}:{PORT}')
 def build_fourth_message(K_C_TGS: bytes, ID_C: str, N_2: str, T_R: str):
     K_C_S = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16)) 
     T_A = time.time() + int(T_R)
+
+    update_key("service")
 
     K_S = get_server_key("service")
     K_S = K_S.encode()
