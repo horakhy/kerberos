@@ -25,7 +25,7 @@ def validate_user(user_login: str, user_password: str):
                 print("\nUsuário Autenticado, enviando Mensagem 1...\n")
                 return True
         
-        print("\nUsuário inexistente!\n\n")
+        print("\nUsuário inexistente!\n")
         return False
     
 def get_user_password(user_login: str):

@@ -52,7 +52,7 @@ while True:
             response = "200"
 
             if S_R == "login":
-                response = f"Ticket validado para {str(ID_C)}"
+                response = f"-- Ticket validado para {str(ID_C)} --"
             if time.time() > float(T_A):
                 response = "408"
 

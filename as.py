@@ -41,7 +41,7 @@ def send_second_message(conn, M_2: str):
     M_2_SERIALIZED = pickle.dumps(M_2)
     time.sleep(5)
     
-    print("M2 enviada ao Cliente")
+    print("M_2 enviada ao Cliente")
     conn.sendall(M_2_SERIALIZED)
 
 while True:

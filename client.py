@@ -33,9 +33,9 @@ def menu():
         
         if validate_user(user_login, user_password):
             client_server(user_login)
-            return
+        return
 
-    print("Escolha uma opção válida!")
+    print("Escolha uma opção válida!\n")
 
 def build_first_message(ID_C: bytes, N_1: bytes, K_C: bytes): 
     buffer_M1 = f"{ID_S},{T_R},{N_1}"
@@ -46,7 +46,7 @@ def send_first_message(sock: socket, M_1: bytes):
     sock.connect((HOST, PORT_AS))
     serialized_M_1 = pickle.dumps(M_1)
 
-    print("\nM1 enviada ao AS!\n")
+    print("\nM_1 enviada ao AS!\n")
     sock.sendall(serialized_M_1)
 
 def build_third_message(ID_C: str, M_2, K_C_TGS: bytes, N_2: bytes):
@@ -130,7 +130,7 @@ def client_server(user_login: str):
 
         while(True):
             sock.sendall(M_5_SERIALIZED)
-            print("M_5 enviado ao Serviço\n")
+            print("M_5 enviado ao Serviço!\n")
 
             M_6 = sock.recv(1024)
             M_6 = pickle.loads(M_6)
@@ -145,7 +145,7 @@ def client_server(user_login: str):
             response = M_6_DECRYPTED[0]
 
             if(response == "408"):
-                print("Ticket expirou!\n")
+                print("-- Ticket expirou! --\n")
                 sys.exit()
             else:
                 print(response)
