@@ -3,6 +3,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import base64
 from Crypto.Random import get_random_bytes
+import sys
 
 def create_user():
     user_login = input("Login: ") 
@@ -60,7 +61,7 @@ def parse_message(message: str):
     parsed_message_list = parsed_message.split(",")
     return parsed_message_list
 
-def get_server_key(server):
+def get_server_key(server: str):
     with open(f'{server}_server_data.txt','r', newline='\n') as f:
         for line in f:
             components = line.strip().split(':')
@@ -68,3 +69,8 @@ def get_server_key(server):
                 key = components[0]
                 return key
         return -1
+    
+def validate_random_number(random_num: bytes, validate_num: bytes):
+    if (random_num != validate_num):
+        print("Número aleatório incorreto!")
+        sys.exit()

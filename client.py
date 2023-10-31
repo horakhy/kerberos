@@ -3,7 +3,7 @@ import random
 import time
 import pickle
 import sys
-from component_util import decrypt_AES, encrypt_AES, get_user_password, parse_message, validate_user
+from component_util import decrypt_AES, encrypt_AES, get_user_password, parse_message, validate_random_number, validate_user
  
 HOST = '127.0.0.1'
 PORT = 8080
@@ -49,9 +49,8 @@ def send_first_message(sock: socket, M_1: bytes):
     print("\nM1 enviada ao AS!\n")
     sock.sendall(serialized_M_1)
 
-def build_third_message(ID_C: str, M_2, K_C_TGS: bytes):
+def build_third_message(ID_C: str, M_2, K_C_TGS: bytes, N_2: bytes):
 
-    N_2 = '%08x' % random.getrandbits(32)
     T_C_TGS = M_2[1]
 
     buffer = f"{ID_C},{ID_S},{T_R},{N_2}"
@@ -85,10 +84,13 @@ def client_server(user_login: str):
     M_2_DECRYPTED = decrypt_AES(M_2[0], K_C)
     M_2_DECRYPTED = parse_message(M_2_DECRYPTED)
 
+    validate_random_number(M_2_DECRYPTED[1], N_1)
+
     K_C_TGS = M_2_DECRYPTED[0]
     K_C_TGS = K_C_TGS.encode()
+    N_2 = '%08x' % random.getrandbits(32)
 
-    M_3 = build_third_message(ID_C, M_2, K_C_TGS)
+    M_3 = build_third_message(ID_C, M_2, K_C_TGS, N_2)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         send_third_message(sock, M_3)
@@ -100,6 +102,8 @@ def client_server(user_login: str):
     
     M_4_DECRYPTED = decrypt_AES(M_4[0], K_C_TGS)
     M_4_DECRYPTED = parse_message(M_4_DECRYPTED)
+
+    validate_random_number(M_4_DECRYPTED[2], N_2)
 
     print("M_4 recebida do servidor TGS!\n")
         
@@ -133,6 +137,8 @@ def client_server(user_login: str):
 
             M_6_DECRYPTED = decrypt_AES(M_6[0], K_C_S)
             M_6_DECRYPTED = parse_message(M_6_DECRYPTED)
+
+            validate_random_number(M_6_DECRYPTED[1], N_3)
 
             print("M_6 recebido do Serviço\n")
 
